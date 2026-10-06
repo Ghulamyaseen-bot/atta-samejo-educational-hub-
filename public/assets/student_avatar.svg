@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" fill="none">
+  <!-- Circular gradient background -->
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E40AF" />
+      <stop offset="100%" stop-color="#3B82F6" />
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="url(#bgGrad)" stroke="#93C5FD" stroke-width="3" />
+  
+  <!-- Graduation Cap -->
+  <g transform="translate(60, 36)">
+    <polygon points="0,-14 34,-2 0,10 -34,-2" fill="#FFFFFF" />
+    <path d="M-18,4 L-18,12 C-18,20 18,20 18,12 L18,4 Z" fill="#E2E8F0" />
+    <!-- Tassel -->
+    <path d="M0,0 Q16,5 18,16" stroke="#FDE047" stroke-width="2.5" fill="none" stroke-linecap="round" />
+    <circle cx="18" cy="18" r="2" fill="#EAB308" />
+  </g>
+
+  <!-- Student Face & Shoulders -->
+  <circle cx="60" cy="56" r="14" fill="#FFFFFF" />
+  <path d="M32,100 C32,80 44,74 60,74 C76,74 88,80 88,100 Z" fill="#FFFFFF" />
+</svg>

@@ -1,0 +1,27 @@
+{
+  "id": "/",
+  "name": "ATTA SAMEJO EDUCATIONAL HUB",
+  "short_name": "ATTA SAMEJO",
+  "description": "Android Educational Assessment & Student Management system for Class 1 to Class 12.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1347d4",
+  "background_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/assets/student_avatar.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/student_avatar.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["education", "productivity"]
+}

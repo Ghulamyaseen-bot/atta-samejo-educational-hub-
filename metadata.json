@@ -1,0 +1,6 @@
+{
+  "name": "ATTA SAMEJO EDUCATIONAL HUB",
+  "description": "Android Educational Assessment & Student Management system for Class 1 to Class 12 students, teachers, and administrators.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
