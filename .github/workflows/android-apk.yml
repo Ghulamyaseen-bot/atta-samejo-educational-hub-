@@ -33,9 +33,23 @@ jobs:
       - name: Build web application
         run: npm run build
 
-      - name: Initialize Capacitor
+      - name: Create clean Capacitor configuration
         run: |
-          npx cap init "ATTA SAMEJO EDUCATIONAL HUB" "com.attasamejo.educationalhub" --web-dir dist
+          rm -f capacitor.config.ts
+          rm -f capacitor.config.js
+          rm -f capacitor.config.json
+
+          cat > capacitor.config.ts <<'EOF'
+          import type { CapacitorConfig } from '@capacitor/cli';
+
+          const config: CapacitorConfig = {
+            appId: 'com.attasamejo.educationalhub',
+            appName: 'ATTA SAMEJO EDUCATIONAL HUB',
+            webDir: 'dist'
+          };
+
+          export default config;
+          EOF
 
       - name: Add Android platform
         run: |
