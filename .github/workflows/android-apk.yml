@@ -33,29 +33,27 @@ jobs:
       - name: Build web application
         run: npm run build
 
-      - name: Create clean Capacitor configuration
+      - name: Remove existing Capacitor configuration
         run: |
           rm -f capacitor.config.ts
           rm -f capacitor.config.js
           rm -f capacitor.config.json
 
-          cat > capacitor.config.ts <<'EOF'
-          import type { CapacitorConfig } from '@capacitor/cli';
-
-          const config: CapacitorConfig = {
-            appId: 'com.attasamejo.educationalhub',
-            appName: 'ATTA SAMEJO EDUCATIONAL HUB',
-            webDir: 'dist'
-          };
-
-          export default config;
+      - name: Create Capacitor JSON configuration
+        run: |
+          cat > capacitor.config.json <<'EOF'
+          {
+            "appId": "com.attasamejo.educationalhub",
+            "appName": "ATTA SAMEJO EDUCATIONAL HUB",
+            "webDir": "dist"
+          }
           EOF
 
       - name: Add Android platform
         run: |
           npx cap add android
 
-      - name: Sync web application with Android
+      - name: Sync Android
         run: |
           npx cap sync android
 
