@@ -11,56 +11,122 @@ permissions:
 
 jobs:
   build-apk:
-    name: Build Web and Android APK
+    name: Build Education Hub APK
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
     steps:
+      # 1. Download the existing repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      # 2. Configure Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
+      # 3. Check project structure
       - name: Check project files
         run: |
-          echo "Checking repository files..."
+          echo "Checking project structure..."
           ls -la
-          echo "Finding package.json files..."
-          find . -maxdepth 5 -name package.json \
-            -not -path '*/node_modules/*' \
-            -not -path '*/.git/*'
 
-      - name: Set up pnpm
-        if: hashFiles('pnpm-lock.yaml') != ''
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+          if [ ! -f package.json ]; then
+            echo "ERROR: package.json not found in repository root."
+            exit 1
+          fi
 
+          echo "Project package.json found."
+
+      # 4. Install dependencies
       - name: Install dependencies
         run: |
-          if [ -f pnpm-lock.yaml ]; then
-            pnpm install --frozen-lockfile
-          elif [ -f package-lock.json ]; then
-            npm ci
-          elif [ -f yarn.lock ]; then
-            npm install
-          elif [ -f package.json ]; then
-            npm install
-          else
-            echo "ERROR: No package.json found in repository root."
+          npm install --legacy-peer-deps
+
+      # 5. Build the existing web application
+      - name: Build web application
+        run: |
+          npm run build
+
+          if [ ! -d dist ]; then
+            echo "ERROR: Build output folder 'dist' was not created."
+            echo "Check the build script and Vite configuration."
             exit 1
           fi
 
-      - name: Build web application
+          echo "Web application built successfully."
+
+      # 6. Install Capacitor for Android
+      - name: Setup Capacitor
         run: |
-          if [ -f pnpm-lock.yaml ]; then
-            pnpm run build
-          elif [ -f package.json ]; then
-            npm run build
-          else
-            echo "ERROR: Cannot find package.json."
+          npm install --no-save --legacy-peer-deps \
+            @capacitor/core@7 \
+            @capacitor/cli@7 \
+            @capacitor/android@7
+
+      # 7. Create Capacitor configuration if missing
+      - name: Configure Capacitor
+        run: |
+          if [ ! -f capacitor.config.json ] && \
+             [ ! -f capacitor.config.ts ] && \
+             [ ! -f capacitor.config.js ]; then
+
+            cat > capacitor.config.json <<'EOF'
+          {
+            "appId": "com.attasamejo.educationhub",
+            "appName": "ATTA SAMEJO Education Hub",
+            "webDir": "dist"
+          }
+          EOF
+
+          fi
+
+      # 8. Add Android platform if needed
+      - name: Add Android platform
+        run: |
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
+
+      # 9. Sync the web application with Android
+      - name: Sync Android
+        run: |
+          npx cap sync android
+
+      # 10. Setup Java
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      # 11. Build the Android APK
+      - name: Build APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      # 12. Verify APK
+      - name: Verify APK
+        run: |
+          APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+
+          if [ ! -f "$APK_PATH" ]; then
+            echo "ERROR: APK file was not generated."
             exit 1
           fi
+
+          echo "APK generated successfully."
+          ls -lh "$APK_PATH"
+
+      # 13. Upload APK to GitHub Actions
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Atta-Samejo-Education-Hub-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
