@@ -23,28 +23,30 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: package-lock.json
 
       - name: Check project files
         run: |
-          echo "Repository root:"
+          echo "Checking repository files..."
           ls -la
-          echo "Finding package.json files:"
-          find . -maxdepth 4 -name package.json \
+          echo "Finding package.json files..."
+          find . -maxdepth 5 -name package.json \
             -not -path '*/node_modules/*' \
             -not -path '*/.git/*'
 
+      - name: Set up pnpm
+        if: hashFiles('pnpm-lock.yaml') != ''
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Install dependencies
         run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          elif [ -f pnpm-lock.yaml ]; then
-            corepack enable
+          if [ -f pnpm-lock.yaml ]; then
             pnpm install --frozen-lockfile
+          elif [ -f package-lock.json ]; then
+            npm ci
           elif [ -f yarn.lock ]; then
-            corepack enable
-            yarn install --immutable
+            npm install
           elif [ -f package.json ]; then
             npm install
           else
@@ -56,8 +58,9 @@ jobs:
         run: |
           if [ -f pnpm-lock.yaml ]; then
             pnpm run build
-          elif [ -f yarn.lock ]; then
-            yarn build
-          else
+          elif [ -f package.json ]; then
             npm run build
+          else
+            echo "ERROR: Cannot find package.json."
+            exit 1
           fi
