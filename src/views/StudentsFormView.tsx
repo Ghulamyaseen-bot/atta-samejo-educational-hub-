@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Student, PasswordRecoveryTicket } from '../types';
+import { Student, PasswordRecoveryTicket, User } from '../types';
 import { api } from '../api/client';
+import { validatePakistaniPhone } from '../utils/pakistanPhone';
 import { 
   Users, 
   Search, 
@@ -19,7 +20,11 @@ import {
   Check
 } from 'lucide-react';
 
-export const StudentsFormView: React.FC = () => {
+interface StudentsFormViewProps {
+  currentUser?: User | null;
+}
+
+export const StudentsFormView: React.FC<StudentsFormViewProps> = ({ currentUser }) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [tickets, setTickets] = useState<PasswordRecoveryTicket[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>('all');
@@ -47,6 +52,7 @@ export const StudentsFormView: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [dob, setDob] = useState('2010-01-01');
   const [gender, setGender] = useState<'Male' | 'Female' | 'Other'>('Male');
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -76,6 +82,7 @@ export const StudentsFormView: React.FC = () => {
     setPhone('');
     setDob('2010-01-01');
     setGender('Male');
+    setFormError(null);
     setShowAddModal(true);
   };
 
@@ -91,11 +98,23 @@ export const StudentsFormView: React.FC = () => {
     setPhone(s.phone || '');
     setDob(s.date_of_birth);
     setGender(s.gender);
+    setFormError(null);
     setShowAddModal(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+
+    // Validate Pakistani phone number if provided or required
+    if (phone.trim()) {
+      const phoneCheck = validatePakistaniPhone(phone.trim());
+      if (!phoneCheck.isValid) {
+        setFormError(phoneCheck.error || 'Please enter a valid Pakistani mobile number in +92XXXXXXXXXX or 03XXXXXXXXX format.');
+        return;
+      }
+    }
+
     if (editingStudent) {
       await api.updateStudent(editingStudent.id, {
         name,
@@ -103,7 +122,7 @@ export const StudentsFormView: React.FC = () => {
         class: className,
         section,
         roll_number: rollNumber,
-        phone,
+        phone: phone.trim() ? validatePakistaniPhone(phone.trim()).display || phone.trim() : '',
         date_of_birth: dob,
         gender,
       });
@@ -122,7 +141,7 @@ export const StudentsFormView: React.FC = () => {
           roll_number: rollNumber,
           profile_photo: '/assets/student_avatar.svg',
           date_of_birth: dob,
-          phone,
+          phone: phone.trim() ? validatePakistaniPhone(phone.trim()).display || phone.trim() : '+92 300 1234567',
           gender,
         },
         assignedUsername,
@@ -134,6 +153,10 @@ export const StudentsFormView: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
+    if (currentUser?.role !== 'admin') {
+      alert('Access restricted: Only administrators have permission to remove student accounts.');
+      return;
+    }
     if (confirm('Are you sure you want to remove this student record?')) {
       await api.deleteStudent(id);
       loadData();
@@ -330,13 +353,15 @@ export const StudentsFormView: React.FC = () => {
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
-                        <button
-                          onClick={() => handleDelete(s.id)}
-                          title="Delete student"
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {currentUser?.role === 'admin' && (
+                          <button
+                            onClick={() => handleDelete(s.id)}
+                            title="Delete student (Admin only)"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -364,6 +389,13 @@ export const StudentsFormView: React.FC = () => {
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {formError && (
+              <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span className="font-semibold">{formError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-3.5">
               <div className="grid grid-cols-2 gap-3">
@@ -485,9 +517,10 @@ export const StudentsFormView: React.FC = () => {
                     type="text"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+92 300 1234567"
+                    placeholder="+923001234567 or 03001234567"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:border-blue-600 outline-none"
                   />
+                  <p className="text-[10px] text-slate-400 mt-0.5">Format: +92XXXXXXXXXX or 03XXXXXXXXX</p>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Date of Birth</label>

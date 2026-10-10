@@ -36,6 +36,29 @@ export const TakeTestView: React.FC<TakeTestViewProps> = ({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [alreadyAttemptedError, setAlreadyAttemptedError] = useState<string | null>(null);
+
+  // Single Active Session Lock & Duplicate Prevention
+  useEffect(() => {
+    const sessionKey = `aseh_active_test_session_${studentId}_${test.id}`;
+    const existingSession = sessionStorage.getItem(sessionKey);
+    const now = Date.now();
+
+    // Check if test was already completed in this session or storage
+    if (existingSession === 'completed') {
+      setAlreadyAttemptedError('You have already completed and submitted this test. Re-submission is disabled.');
+      return;
+    }
+
+    sessionStorage.setItem(sessionKey, String(now));
+
+    return () => {
+      // Don't clear if completed to keep lock active
+      if (sessionStorage.getItem(sessionKey) !== 'completed') {
+        sessionStorage.removeItem(sessionKey);
+      }
+    };
+  }, [studentId, test.id]);
 
   const questions = test.questions || [];
   const currentQ = questions[currentIndex];
@@ -89,6 +112,7 @@ export const TakeTestView: React.FC<TakeTestViewProps> = ({
     setIsSubmitting(false);
 
     if (res.success && res.data) {
+      sessionStorage.setItem(`aseh_active_test_session_${studentId}_${test.id}`, 'completed');
       setTestResult(res.data);
     }
   };
@@ -98,6 +122,24 @@ export const TakeTestView: React.FC<TakeTestViewProps> = ({
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  if (alreadyAttemptedError) {
+    return (
+      <div className="max-w-md mx-auto p-8 text-center bg-white rounded-3xl border border-slate-200 shadow-md space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
+          <AlertTriangle className="w-6 h-6" />
+        </div>
+        <h3 className="font-extrabold text-base text-slate-800">Test Session Completed</h3>
+        <p className="text-xs text-slate-500">{alreadyAttemptedError}</p>
+        <button
+          onClick={onBackToDashboard}
+          className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs"
+        >
+          Return to Dashboard
+        </button>
+      </div>
+    );
+  }
 
   if (!currentQ && !testResult) {
     return (

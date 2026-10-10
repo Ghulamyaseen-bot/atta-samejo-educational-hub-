@@ -5,13 +5,15 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { api } from './api/client';
 import { User, Student, Teacher, TestResult, Test, Question, NotificationItem, AttendanceRecord } from './types';
 import { NavigationSidebar, NavTab } from './components/NavigationSidebar';
 import { HeaderBar } from './components/HeaderBar';
 import { AndroidBottomNav } from './components/AndroidBottomNav';
 import { OfflineStatusBanner } from './components/OfflineStatusBanner';
-import { KeyRound, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
+import { KeyRound, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight, ClipboardCheck, FileText } from 'lucide-react';
+import officialAdminPortrait from './assets/FB_IMG_1790800525155.jpg';
 
 // Views
 import { LoginView } from './views/LoginView';
@@ -87,28 +89,38 @@ export default function App() {
   }, []);
 
   const checkInitialAuth = async () => {
-    // If not authenticated, automatically log in as default student Ghulam Yaseen
-    // so the dashboard matching the reference image opens directly for review!
-    if (!api.isAuthenticated()) {
-      const loginRes = await api.login('ghulam', 'password123');
-      if (loginRes.success && loginRes.data) {
-        setCurrentUser(loginRes.data.user);
-        setCurrentStudent(loginRes.data.student || null);
-        setCurrentTeacher(loginRes.data.teacher || null);
-        await loadUserData(loginRes.data.student?.id || 'std_1');
-      }
-    } else {
+    // Only restore session if user is explicitly authenticated with valid active session
+    if (api.isAuthenticated()) {
       const user = api.getCurrentUser();
       if (user) {
         setCurrentUser(user);
-        const stdRes = await api.getStudentById(user.id);
-        if (stdRes.success && stdRes.data) {
-          setCurrentStudent(stdRes.data);
-          await loadUserData(stdRes.data.id);
-        } else {
+        if (user.role === 'student') {
+          const stdRes = await api.getStudentById(user.id);
+          if (stdRes.success && stdRes.data) {
+            setCurrentStudent(stdRes.data);
+            await loadUserData(stdRes.data.id);
+          } else {
+            await loadUserData('std_1');
+          }
+          setCurrentTab('dashboard');
+        } else if (user.role === 'teacher') {
+          const teacherRes = await api.getTeacherById(user.id);
+          if (teacherRes.success && teacherRes.data) {
+            setCurrentTeacher(teacherRes.data);
+          }
           await loadUserData('std_1');
+          setCurrentTab('omr-sheet');
+        } else {
+          // Admin role
+          await loadUserData('std_1');
+          setCurrentTab('admin-manage');
         }
+      } else {
+        setCurrentUser(null);
       }
+    } else {
+      // Unauthenticated: Strictly require login, never bypass or auto-login
+      setCurrentUser(null);
     }
   };
 
@@ -133,7 +145,16 @@ export default function App() {
     setCurrentUser(user);
     setCurrentStudent(student || null);
     setCurrentTeacher(teacher || null);
-    setCurrentTab('dashboard');
+    
+    // Redirect each user to the correct portal according to their assigned role
+    if (user.role === 'admin') {
+      setCurrentTab('admin-manage');
+    } else if (user.role === 'teacher') {
+      setCurrentTab('omr-sheet');
+    } else {
+      setCurrentTab('dashboard');
+    }
+
     if (student) {
       await loadUserData(student.id);
     } else {
@@ -147,28 +168,7 @@ export default function App() {
     setCurrentStudent(null);
     setCurrentTeacher(null);
     setActiveTest(null);
-  };
-
-  const handleSwitchUser = async (targetRoleOrUser: string) => {
-    let u = 'ghulam';
-    let p = 'password123';
-    if (targetRoleOrUser === 'teacher') {
-      u = 'ghulamyaseen';
-      p = 'ghulamyaseen123';
-    } else if (targetRoleOrUser === 'admin') {
-      u = 'ghulamyaseen';
-      p = 'ghulamyaseen786';
-    } else if (targetRoleOrUser === 'student' || targetRoleOrUser === 'ghulam') {
-      u = 'ghulam';
-      p = 'password123';
-    } else {
-      u = targetRoleOrUser;
-      p = 'password123';
-    }
-    const res = await api.login(u, p);
-    if (res.success && res.data) {
-      handleLoginSuccess(res.data.user, res.data.student, res.data.teacher);
-    }
+    setCurrentTab('dashboard');
   };
 
   const handleStartTest = async (testId?: string) => {
@@ -222,7 +222,11 @@ export default function App() {
     class: 'Class 10',
     section: 'A',
     roll_number: '05',
-    profile_photo: currentUser.avatar || '/assets/student_avatar.svg',
+    profile_photo: (currentUser.role === 'admin' || currentUser.role === 'teacher')
+      ? '/assets/FB_IMG_1790800525155.jpg'
+      : (currentUser.avatar && currentUser.avatar !== '/assets/student_avatar.svg'
+          ? currentUser.avatar
+          : '/assets/FB_IMG_1790800525155.jpg'),
     date_of_birth: '2010-04-14',
     phone: '+92 300 1234567',
     gender: 'Male',
@@ -288,6 +292,20 @@ export default function App() {
         );
 
       case 'create-test':
+        if (currentUser.role === 'student') {
+          return (
+            <div className="bg-white rounded-3xl p-8 border border-slate-200 text-center max-w-lg mx-auto space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+                <ClipboardCheck className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-extrabold text-slate-800">Access Restricted</h3>
+              <p className="text-xs text-slate-500">Students do not have permission to create or configure tests. You can attempt available tests from the Tests section.</p>
+              <button onClick={() => setCurrentTab('my-tests')} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors">
+                View Available Tests
+              </button>
+            </div>
+          );
+        }
         return (
           <CreateTestView
             onBack={() => setCurrentTab('my-tests')}
@@ -302,13 +320,28 @@ export default function App() {
         return <DescriptiveTestView onBack={() => setCurrentTab('dashboard')} />;
 
       case 'omr-sheet':
-        return <OmrSystemView onViewResults={() => setCurrentTab('results')} />;
+        if (currentUser.role === 'student') {
+          return (
+            <div className="bg-white rounded-3xl p-8 border border-slate-200 text-center max-w-lg mx-auto space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+                <FileText className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-extrabold text-slate-800">Access Restricted</h3>
+              <p className="text-xs text-slate-500">OMR sheet generation, scanning, and answer key management are reserved for Teachers and Administrators.</p>
+              <button onClick={() => setCurrentTab('dashboard')} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors">
+                Return to Dashboard
+              </button>
+            </div>
+          );
+        }
+        return <OmrSystemView onViewResults={() => setCurrentTab('results')} currentUser={currentUser} />;
 
       case 'results':
         return (
           <ResultsAnalyticsView
             results={resultsList}
             student={student}
+            role={currentUser.role}
             onTakeTestAgain={(testId) => handleStartTest(testId)}
           />
         );
@@ -324,7 +357,7 @@ export default function App() {
         );
 
       case 'study-materials':
-        return <StudyMaterialsView className={student.class} />;
+        return <StudyMaterialsView className={student.class} role={currentUser.role} />;
 
       case 'profile':
         return (
@@ -334,13 +367,20 @@ export default function App() {
             currentTeacher={currentTeacher}
             onUpdateSuccess={(updated) => {
               setCurrentStudent(updated);
+              if (currentUser) {
+                setCurrentUser({
+                  ...currentUser,
+                  avatar: updated.profile_photo || currentUser.avatar,
+                  phone: updated.phone || currentUser.phone,
+                });
+              }
               loadUserData(updated.id);
             }}
           />
         );
 
       case 'students-form':
-        return <StudentsFormView />;
+        return <StudentsFormView currentUser={currentUser} />;
 
       case 'admin-manage':
         return <AdminManageView />;
@@ -349,6 +389,7 @@ export default function App() {
         return (
           <StudentDashboardView
             student={student}
+            role={currentUser.role}
             stats={stats}
             onNavigate={(tab) => setCurrentTab(tab)}
             onSelectResult={(res) => setCurrentTab('results')}
@@ -405,12 +446,26 @@ export default function App() {
                 isAndroidView={isAndroidView}
                 onToggleAndroidView={() => setIsAndroidView(false)}
                 notifications={notifications}
-                onSwitchUser={handleSwitchUser}
+                onNavigate={(tab) => {
+                  setActiveTest(null);
+                  setCurrentTab(tab as any);
+                }}
               />
 
               {/* Main Scrollable Content */}
               <main className="flex-1 overflow-y-auto p-4 pb-20">
-                {renderMainContent()}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTest ? `test-${activeTest.id}` : currentTab}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.22, ease: 'easeOut' }}
+                    className="w-full"
+                  >
+                    {renderMainContent()}
+                  </motion.div>
+                </AnimatePresence>
               </main>
 
               {/* Android Bottom Navigation */}
@@ -451,12 +506,26 @@ export default function App() {
               isAndroidView={isAndroidView}
               onToggleAndroidView={() => setIsAndroidView(!isAndroidView)}
               notifications={notifications}
-              onSwitchUser={handleSwitchUser}
+              onNavigate={(tab) => {
+                setActiveTest(null);
+                setCurrentTab(tab as any);
+              }}
             />
 
             {/* Dashboard Content */}
             <main className="flex-1 p-4 sm:p-6 lg:p-7 max-w-[1600px] w-full mx-auto pb-20 lg:pb-8">
-              {renderMainContent()}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTest ? `test-${activeTest.id}` : currentTab}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.22, ease: 'easeOut' }}
+                  className="w-full"
+                >
+                  {renderMainContent()}
+                </motion.div>
+              </AnimatePresence>
             </main>
 
             {/* Mobile Bottom Navigation for small screens */}

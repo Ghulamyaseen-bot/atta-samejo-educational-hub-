@@ -13,7 +13,9 @@ export interface User {
   role: Role;
   avatar?: string;
   password_hash: string;
+  phone?: string;
   must_change_password?: boolean;
+  status?: 'active' | 'deactivated';
   created_at: string;
 }
 
@@ -24,9 +26,13 @@ export interface PasswordRecoveryTicket {
   role: Role;
   student_name?: string;
   class_name?: string;
+  phone?: string;
+  masked_phone?: string;
   status: 'pending' | 'resolved';
   requested_at: string;
   reset_pin?: string;
+  otp_code?: string;
+  otp_expires_at?: string;
 }
 
 export interface Student {
@@ -155,12 +161,35 @@ export interface AttendanceSummary {
   percentage: number;
 }
 
+export interface OMRAnswerKey {
+  id: string;
+  name: string;
+  exam_id?: string;
+  class_name: string;
+  subject: string;
+  question_count: number;
+  keys: Record<number, string>; // e.g. { 1: 'B', 2: 'D', 3: 'A', ... }
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OMRQuestionDetail {
+  question_number: number;
+  detected_answer: string;
+  correct_answer: string;
+  is_correct: boolean;
+  is_unanswered: boolean;
+  needs_review?: boolean;
+}
+
 export interface OMRSheet {
   id: string;
   title: string;
   class_name: string;
   subject: string;
   test_id?: string;
+  answer_key_id?: string;
   question_count: number; // e.g. 20, 50, 100
   options_per_question: number; // 4 (A, B, C, D)
   answer_key: string[]; // ['A', 'C', 'B', ...]
@@ -170,6 +199,8 @@ export interface OMRSheet {
 
 export interface OMRScanResult {
   sheet_id: string;
+  answer_key_id?: string;
+  answer_key_name?: string;
   student_id: string;
   student_name?: string;
   roll_number: string;
@@ -178,10 +209,12 @@ export interface OMRScanResult {
   correct_count: number;
   wrong_count: number;
   unanswered_count: number;
+  flagged_review_count?: number;
   obtained_marks: number;
   total_marks: number;
   percentage: number;
   grade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'F';
+  question_details?: OMRQuestionDetail[];
   processed_at: string;
 }
 
@@ -192,4 +225,31 @@ export interface NotificationItem {
   date: string;
   type: 'test' | 'exam' | 'result' | 'announcement';
   read: boolean;
+}
+
+export interface StudyMaterial {
+  id: string;
+  title: string;
+  class_name: string; // e.g. "Class 10"
+  subject: string;
+  chapter: string;
+  description: string;
+  file_name?: string;
+  file_size?: string;
+  file_data?: string; // data URL or mock PDF identifier
+  uploaded_by: string;
+  uploaded_at: string;
+}
+
+export interface ParsedMcqQuestion {
+  id: string;
+  question_text: string;
+  options: string[]; // 4 options
+  correct_answer: string; // '0', '1', '2', '3'
+  class_name: string;
+  subject: string;
+  chapter?: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  marks: number;
+  approved?: boolean;
 }

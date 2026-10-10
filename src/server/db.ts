@@ -15,8 +15,10 @@ import {
   TestResult,
   AttendanceRecord,
   OMRSheet,
+  OMRAnswerKey,
   NotificationItem,
   PasswordRecoveryTicket,
+  StudyMaterial,
 } from '../types';
 import { calculatePercentage, calculateSchoolGrade } from '../utils/grading';
 
@@ -31,8 +33,10 @@ export interface DatabaseState {
   results: TestResult[];
   attendance: AttendanceRecord[];
   omrSheets: OMRSheet[];
+  omrAnswerKeys: OMRAnswerKey[];
   notifications: NotificationItem[];
   passwordRecoveryTickets: PasswordRecoveryTicket[];
+  studyMaterials: StudyMaterial[];
 }
 
 export function getInitialDatabase(): DatabaseState {
@@ -44,7 +48,7 @@ export function getInitialDatabase(): DatabaseState {
       name: 'Sir Ghulam Yaseen',
       username: 'ghulamyaseen',
       role: 'teacher',
-      avatar: '/assets/student_avatar.svg',
+      avatar: '/assets/FB_IMG_1790800525155.jpg',
       password_hash: 'bc4933e96592c9af03e18e9e21a1984eca09ec60882798ba794f8796618d6f76', // ghulamyaseen123
       must_change_password: false,
       created_at: '2026-08-01T08:00:00Z',
@@ -55,7 +59,7 @@ export function getInitialDatabase(): DatabaseState {
       name: 'Ghulam Yaseen (Administrator)',
       username: 'ghulamyaseen',
       role: 'admin',
-      avatar: '/assets/student_avatar.svg',
+      avatar: '/assets/FB_IMG_1790800525155.jpg',
       password_hash: '33edb22d668717bb3bdede364c6874cf62288f572412d05379edeb930ec4c39d', // ghulamyaseen786
       must_change_password: false,
       created_at: '2026-08-01T08:00:00Z',
@@ -66,7 +70,7 @@ export function getInitialDatabase(): DatabaseState {
       name: 'Ghulam Yaseen',
       username: 'ghulam',
       role: 'student',
-      avatar: '/assets/student_avatar.svg',
+      avatar: '/assets/FB_IMG_1790800525155.jpg',
       password_hash: '50f4815bc807aebc557b8fe92f374afb927181274049cf9fce4690f3755b9143', // password123
       must_change_password: false,
       created_at: '2026-09-01T08:00:00Z',
@@ -104,7 +108,7 @@ export function getInitialDatabase(): DatabaseState {
       class: 'Class 10',
       section: 'A',
       roll_number: '05',
-      profile_photo: '/assets/student_avatar.svg',
+      profile_photo: '/assets/FB_IMG_1790800525155.jpg',
       date_of_birth: '2010-04-14',
       phone: '+92 300 1234567',
       gender: 'Male',
@@ -145,13 +149,25 @@ export function getInitialDatabase(): DatabaseState {
   // Teachers
   const teachers: Teacher[] = [
     {
+      id: 'tch_ghulam_1',
+      user_id: 'usr_teacher_ghulam',
+      teacher_id: 'TCH-GY-101',
+      name: 'Sir Ghulam Yaseen',
+      subjects: ['Mathematics', 'General Science', 'Physics'],
+      classes: ['Class 9', 'Class 10', 'Class 11', 'Class 12'],
+      profile_photo: '/assets/FB_IMG_1790800525155.jpg',
+      phone: '+92 300 1234567',
+      qualification: 'M.Sc. Mathematics & Educational Assessment',
+      created_at: '2026-08-01T08:00:00Z',
+    },
+    {
       id: 'tch_1',
       user_id: 'usr_teacher_1',
       teacher_id: 'TCH-101',
       name: 'Sir Atta Samejo',
       subjects: ['Mathematics', 'General Science', 'Physics'],
       classes: ['Class 9', 'Class 10', 'Class 11', 'Class 12'],
-      profile_photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=240&auto=format&fit=crop&q=80',
+      profile_photo: '/assets/FB_IMG_1790800525155.jpg',
       phone: '+92 300 9876543',
       qualification: 'M.Sc. Mathematics & Educational Assessment',
       created_at: '2026-08-15T08:00:00Z',
@@ -515,6 +531,82 @@ export function getInitialDatabase(): DatabaseState {
     },
   ];
 
+  // Initial Editable OMR Answer Keys
+  const omrAnswerKeys: OMRAnswerKey[] = [
+    {
+      id: 'key_math_1',
+      name: 'Class 10 Mathematics Monthly Assessment Key',
+      exam_id: 'EXAM-MTH-101',
+      class_name: 'Class 10',
+      subject: 'Mathematics',
+      question_count: 20,
+      keys: {
+        1: 'A', 2: 'A', 3: 'C', 4: 'B', 5: 'D',
+        6: 'B', 7: 'A', 8: 'C', 9: 'D', 10: 'A',
+        11: 'B', 12: 'C', 13: 'A', 14: 'D', 15: 'B',
+        16: 'A', 17: 'C', 18: 'B', 19: 'D', 20: 'A'
+      },
+      created_by: 'Teacher / Admin',
+      created_at: '2026-10-01T09:00:00Z',
+      updated_at: '2026-10-01T09:00:00Z',
+    },
+    {
+      id: 'key_sci_1',
+      name: 'Class 10 General Science Diagnostic Key',
+      exam_id: 'EXAM-SCI-102',
+      class_name: 'Class 10',
+      subject: 'General Science',
+      question_count: 20,
+      keys: {
+        1: 'A', 2: 'C', 3: 'C', 4: 'B', 5: 'A',
+        6: 'D', 7: 'B', 8: 'A', 9: 'C', 10: 'D',
+        11: 'A', 12: 'B', 13: 'C', 14: 'D', 15: 'A',
+        16: 'B', 17: 'C', 18: 'D', 19: 'A', 20: 'B'
+      },
+      created_by: 'Teacher / Admin',
+      created_at: '2026-10-02T10:00:00Z',
+      updated_at: '2026-10-02T10:00:00Z',
+    },
+    {
+      id: 'key_mock_50',
+      name: 'Class 10 Midterm Model Assessment (50 Questions)',
+      exam_id: 'EXAM-MID-500',
+      class_name: 'Class 10',
+      subject: 'Physics',
+      question_count: 50,
+      keys: (() => {
+        const k: Record<number, string> = {};
+        const opts = ['A', 'B', 'C', 'D'];
+        for (let i = 1; i <= 50; i++) {
+          k[i] = opts[(i * 3 + 1) % 4];
+        }
+        return k;
+      })(),
+      created_by: 'Teacher / Admin',
+      created_at: '2026-10-04T11:00:00Z',
+      updated_at: '2026-10-04T11:00:00Z',
+    },
+    {
+      id: 'key_mock_100',
+      name: 'Class 10 Board Mock Full Examination Key (100 Questions)',
+      exam_id: 'EXAM-BMOCK-100',
+      class_name: 'Class 10',
+      subject: 'Mathematics',
+      question_count: 100,
+      keys: (() => {
+        const k: Record<number, string> = {};
+        const opts = ['B', 'D', 'A', 'C'];
+        for (let i = 1; i <= 100; i++) {
+          k[i] = opts[(i * 7 + 2) % 4];
+        }
+        return k;
+      })(),
+      created_by: 'Teacher / Admin',
+      created_at: '2026-10-05T12:00:00Z',
+      updated_at: '2026-10-05T12:00:00Z',
+    }
+  ];
+
   // Notifications
   const notifications: NotificationItem[] = [
     {
@@ -554,6 +646,7 @@ export function getInitialDatabase(): DatabaseState {
     results,
     attendance,
     omrSheets,
+    omrAnswerKeys,
     notifications,
     passwordRecoveryTickets: [
       {
@@ -565,6 +658,56 @@ export function getInitialDatabase(): DatabaseState {
         class_name: 'Class 10',
         status: 'pending',
         requested_at: '2026-10-06T12:00:00Z',
+      },
+    ],
+    studyMaterials: [
+      {
+        id: 'mat_1',
+        title: 'Mathematics Unit 1: Quadratic Equations Handbook',
+        subject: 'Mathematics',
+        class_name: 'Class 10',
+        chapter: 'Chapter 1: Quadratic Equations',
+        description: 'Comprehensive notes with solved examples and standard discriminant practice.',
+        file_name: 'Mathematics_Class10_Ch1_Quadratics.pdf',
+        file_size: '2.4 MB',
+        uploaded_by: 'Sir Ghulam Yaseen',
+        uploaded_at: '2026-09-15T09:00:00Z',
+      },
+      {
+        id: 'mat_2',
+        title: 'General Science: Optics & Lens Formulas Summary',
+        subject: 'General Science',
+        class_name: 'Class 10',
+        chapter: 'Chapter 3: Light & Optical Systems',
+        description: 'Refraction principles, Snell’s law, concave and convex lens ray diagrams.',
+        file_name: 'GeneralScience_Optics_Notes.pdf',
+        file_size: '1.8 MB',
+        uploaded_by: 'Sir Ghulam Yaseen',
+        uploaded_at: '2026-09-18T10:30:00Z',
+      },
+      {
+        id: 'mat_3',
+        title: 'English Language: Essay Writing & Grammar Rules',
+        subject: 'English Language',
+        class_name: 'Class 10',
+        chapter: 'Composition & Applied Grammar',
+        description: 'Model descriptive essays, active/passive voice tables, and vocabulary lists.',
+        file_name: 'English_Grammar_Guide_Class10.pdf',
+        file_size: '1.2 MB',
+        uploaded_by: 'Ghulam Yaseen (Administrator)',
+        uploaded_at: '2026-09-22T11:15:00Z',
+      },
+      {
+        id: 'mat_4',
+        title: 'Physics Mechanics: Newton Laws & Gravitation',
+        subject: 'Physics',
+        class_name: 'Class 9',
+        chapter: 'Chapter 2: Kinematics & Dynamics',
+        description: 'Detailed derivations of velocity-time relations and universal gravitation.',
+        file_name: 'Physics_Class9_Mechanics.pdf',
+        file_size: '3.1 MB',
+        uploaded_by: 'Sir Ghulam Yaseen',
+        uploaded_at: '2026-09-25T14:00:00Z',
       },
     ],
   };

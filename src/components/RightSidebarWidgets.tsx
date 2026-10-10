@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { 
   FileCheck2, 
   TrendingUp, 
@@ -161,7 +162,7 @@ export const RightSidebarWidgets: React.FC<RightSidebarWidgetsProps> = ({
           </div>
           <button
             onClick={onViewAllUpcoming}
-            className="text-[11px] text-blue-600 font-bold hover:underline"
+            className="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
           >
             View All
           </button>
@@ -169,10 +170,11 @@ export const RightSidebarWidgets: React.FC<RightSidebarWidgetsProps> = ({
 
         <div className="divide-y divide-slate-100">
           {upcomingList.map((item) => (
-            <div
+            <motion.div
               key={item.id}
+              whileTap={{ scale: 0.98 }}
               onClick={() => onSelectUpcomingTest?.(item.id)}
-              className="py-2.5 flex items-center justify-between group cursor-pointer hover:bg-slate-50 -mx-1.5 px-1.5 rounded-xl transition-colors active:scale-[0.99]"
+              className="py-2.5 flex items-center justify-between group cursor-pointer hover:bg-slate-50 -mx-1.5 px-1.5 rounded-xl transition-colors"
             >
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-slate-100 group-hover:bg-blue-50 text-slate-700 group-hover:text-blue-700 flex flex-col items-center justify-center font-bold text-xs shrink-0 transition-colors">
@@ -191,13 +193,17 @@ export const RightSidebarWidgets: React.FC<RightSidebarWidgetsProps> = ({
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 transition-colors shrink-0" />
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
 
       {/* 4. You Can Do It! Motivational Card */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950 to-slate-800 text-white p-4 sm:p-5 shadow-md">
+      <motion.div 
+        whileHover={{ scale: 1.01 }}
+        transition={{ duration: 0.2 }}
+        className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950 to-slate-800 text-white p-4 sm:p-5 shadow-md"
+      >
         <div className="absolute right-0 bottom-0 opacity-15 pointer-events-none">
           <Mountain className="w-32 h-32 -mb-5 -mr-4 text-white" />
         </div>
@@ -214,7 +220,7 @@ export const RightSidebarWidgets: React.FC<RightSidebarWidgetsProps> = ({
             — Keep Going, {studentName}
           </p>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

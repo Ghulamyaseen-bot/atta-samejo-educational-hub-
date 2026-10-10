@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Student, User, Teacher } from '../types';
 import { api } from '../api/client';
 import { OfficialLogo } from '../components/OfficialLogo';
+import officialAdminPortrait from '../assets/FB_IMG_1790800525155.jpg';
 import { 
   User as UserIcon, 
   Lock, 
@@ -40,9 +41,55 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
 
   // Contact details form
   const [phone, setPhone] = useState(student.phone || '');
-  const [profilePhoto, setProfilePhoto] = useState(student.profile_photo || '');
+  const initialPhoto = (role === 'admin' || role === 'teacher')
+    ? '/assets/FB_IMG_1790800525155.jpg'
+    : (student.profile_photo && student.profile_photo !== '/assets/student_avatar.svg'
+        ? student.profile_photo
+        : (activeUser?.avatar && activeUser.avatar !== '/assets/student_avatar.svg'
+            ? activeUser.avatar
+            : '/assets/FB_IMG_1790800525155.jpg'));
+
+  const [currentPhoto, setCurrentPhoto] = useState<string>(initialPhoto);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileSuccessMsg, setProfileSuccessMsg] = useState<string | null>(null);
+
+  // Handle immediate photo selection and preview
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setPhotoError('Please select a valid image file (JPG, PNG).');
+      return;
+    }
+
+    setPhotoError(null);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        // Appears immediately after selecting it
+        setCurrentPhoto(dataUrl);
+
+        // Auto-save immediately so the picture persists across refreshes and logins
+        try {
+          const res = await api.updateStudent(student.id, {
+            profile_photo: dataUrl,
+          });
+          if (res.success && res.data) {
+            onUpdateSuccess(res.data);
+            setProfileSuccessMsg('Profile photograph updated successfully.');
+            setTimeout(() => setProfileSuccessMsg(null), 3000);
+          }
+        } catch (err) {
+          console.error('Failed to auto-save photograph', err);
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Change Password state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -70,7 +117,7 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
 
     const res = await api.updateStudent(student.id, {
       phone,
-      profile_photo: profilePhoto,
+      profile_photo: currentPhoto,
     });
 
     setIsSavingProfile(false);
@@ -131,13 +178,52 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
       {/* Top Profile Header Card */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center gap-6">
         <div className="relative group shrink-0">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden ring-4 ring-blue-100 shadow-md bg-blue-50">
+          {role === 'student' && (
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handlePhotoSelect}
+              accept="image/*"
+              className="hidden"
+            />
+          )}
+          <div 
+            onClick={() => {
+              if (role === 'student') {
+                fileInputRef.current?.click();
+              }
+            }}
+            title={role === 'student' ? "Click to select new profile photograph" : "Official Educational Hub Portrait"}
+            className={`w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden shadow-md relative ${
+              role === 'student' ? 'cursor-pointer group transition-transform hover:scale-105' : ''
+            } ${
+              role === 'admin'
+                ? 'ring-4 ring-amber-300 bg-slate-900'
+                : role === 'teacher'
+                ? 'ring-4 ring-blue-300 bg-slate-900'
+                : 'ring-4 ring-emerald-300 bg-emerald-50'
+            }`}
+          >
             <img
-              src={profilePhoto || activeUser?.avatar || "/assets/student_avatar.svg"}
+              src={
+                (role === 'admin' || role === 'teacher')
+                  ? '/assets/FB_IMG_1790800525155.jpg'
+                  : (currentPhoto && currentPhoto !== '/assets/student_avatar.svg' ? currentPhoto : '/assets/FB_IMG_1790800525155.jpg')
+              }
               alt={activeUser?.name || student.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-top"
+              onError={(e) => {
+                e.currentTarget.src = '/assets/FB_IMG_1790800525155.jpg';
+              }}
               referrerPolicy="no-referrer"
             />
+            {/* Hover overlay to change picture strictly for students */}
+            {role === 'student' && (
+              <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[11px] font-bold p-1">
+                <Camera className="w-5 h-5 mb-0.5" />
+                <span>Change Photo</span>
+              </div>
+            )}
           </div>
           <div className={`absolute -bottom-2 -right-2 p-2 rounded-xl text-white shadow-md ${
             role === 'admin' ? 'bg-purple-600' : role === 'teacher' ? 'bg-emerald-600' : 'bg-blue-600'
@@ -337,20 +423,35 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
                 </div>
               </div>
 
+
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Profile Photo URL / Avatar
+                  Profile Photograph
                 </label>
-                <div className="relative">
-                  <Camera className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={profilePhoto}
-                    onChange={(e) => setProfilePhoto(e.target.value)}
-                    placeholder="/assets/student_avatar.svg or https://..."
-                    className="w-full pl-10 pr-3 py-2.5 bg-slate-50 focus:bg-white text-xs font-semibold rounded-xl border border-slate-200 focus:border-blue-600 outline-none"
-                  />
+                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                  <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-slate-200 shadow-xs">
+                    <img
+                      src={currentPhoto || officialAdminPortrait || '/assets/FB_IMG_1790800525155.jpg'}
+                      alt="Student Portrait"
+                      className="w-full h-full object-cover object-top"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-slate-800 truncate">Personal Photograph</p>
+                    <p className="text-[10px] text-slate-500">JPG, PNG supported</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+                  >
+                    <Camera className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Select Photo</span>
+                  </button>
                 </div>
+                {photoError && (
+                  <p className="text-[11px] text-rose-500 font-semibold mt-1">{photoError}</p>
+                )}
               </div>
 
               <div className="pt-2">
@@ -359,7 +460,7 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
                   disabled={isSavingProfile}
                   className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer"
                 >
-                  {isSavingProfile ? 'Updating...' : 'Save Contact Details'}
+                  {isSavingProfile ? 'Updating...' : 'Save Profile & Photograph'}
                 </button>
               </div>
 

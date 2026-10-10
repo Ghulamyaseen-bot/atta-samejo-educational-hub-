@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, 
   ClipboardCheck, 
@@ -16,6 +17,7 @@ import {
   CalendarCheck
 } from 'lucide-react';
 import { Role } from '../types';
+import officialAdminPortrait from '../assets/FB_IMG_1790800525155.jpg';
 
 export type NavTab = 
   | 'dashboard'
@@ -52,7 +54,7 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
     { id: 'create-test', label: 'Create Test', icon: <PlusCircle className="w-5 h-5" />, roles: ['teacher', 'admin'] },
     { id: 'mcq-bank', label: 'MCQ Bank', icon: <BookOpen className="w-5 h-5" />, roles: ['student', 'teacher', 'admin'] },
     { id: 'descriptive-tests', label: 'Descriptive Tests', icon: <PenLine className="w-5 h-5" />, roles: ['student', 'teacher', 'admin'] },
-    { id: 'omr-sheet', label: 'OMR Sheet', icon: <Grid className="w-5 h-5" />, roles: ['student', 'teacher', 'admin'] },
+    { id: 'omr-sheet', label: 'OMR Sheet & Scanner', icon: <Grid className="w-5 h-5" />, roles: ['teacher', 'admin'] },
     { id: 'results', label: 'Results & Analytics', icon: <BarChart3 className="w-5 h-5" />, roles: ['student', 'teacher', 'admin'] },
     { id: 'attendance', label: 'Attendance', icon: <CalendarCheck className="w-5 h-5" />, roles: ['student', 'teacher', 'admin'] },
     { id: 'study-materials', label: 'Study Materials', icon: <BookMarked className="w-5 h-5" />, roles: ['student', 'teacher', 'admin'] },
@@ -83,26 +85,35 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
         <div>
           <div className="p-5 pb-4 border-b border-slate-800/80 flex items-start justify-between">
             <div className="flex items-center gap-3">
-              {/* Blue Graduation Diamond Icon */}
-              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/30 shrink-0">
-                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                  <path d="M6 12v5c3 3 9 3 12 0v-5"/>
-                </svg>
+              {/* Official Administrator Portrait on Upper Left */}
+              <div className="relative shrink-0">
+                <div className="w-11 h-11 rounded-xl overflow-hidden ring-2 ring-amber-400/90 shadow-md bg-slate-900">
+                  <img
+                    src={officialAdminPortrait || '/assets/FB_IMG_1790800525155.jpg'}
+                    alt="Official Administrator Sir Ghulam Yaseen"
+                    className="w-full h-full object-cover object-top select-none pointer-events-none"
+                    onError={(e) => {
+                      e.currentTarget.src = '/FB_IMG_1790800525155.jpg';
+                    }}
+                  />
+                </div>
+                <div 
+                  className="absolute -bottom-1 -right-1 w-4 h-4 bg-amber-500 text-white rounded-full flex items-center justify-center ring-1 ring-slate-900 shadow-xs"
+                  title="Official Administrator"
+                >
+                  <ShieldCheck className="w-2.5 h-2.5" />
+                </div>
               </div>
-              <div className="leading-tight">
-                <div className="font-extrabold text-base tracking-tight text-white uppercase">
+
+              <div className="leading-tight min-w-0">
+                <div className="font-extrabold text-base tracking-tight text-white uppercase truncate">
                   ATTA SAMEJO
                 </div>
                 <div className="text-[10px] font-semibold text-slate-300 tracking-wider uppercase">
                   EDUCATIONAL HUB
                 </div>
-                <div className="text-[9px] font-medium text-sky-400 mt-1 flex items-center gap-1">
-                  <span>Learn</span>
-                  <span className="text-[6px]">•</span>
-                  <span>Practice</span>
-                  <span className="text-[6px]">•</span>
-                  <span>Achieve</span>
+                <div className="text-[10px] font-bold text-amber-300 mt-1 flex items-center gap-1">
+                  <span>Admin: Ghulam Yaseen</span>
                 </div>
               </div>
             </div>
@@ -120,13 +131,14 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
             {visibleItems.map((item) => {
               const isActive = currentTab === item.id;
               return (
-                <button
+                <motion.button
                   key={item.id}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     onSelectTab(item.id);
                     onClose();
                   }}
-                  className={`w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  className={`w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     isActive
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                       : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
@@ -134,7 +146,7 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
                 >
                   <span className={isActive ? 'text-white' : 'text-slate-400'}>{item.icon}</span>
                   <span>{item.label}</span>
-                </button>
+                </motion.button>
               );
             })}
           </nav>

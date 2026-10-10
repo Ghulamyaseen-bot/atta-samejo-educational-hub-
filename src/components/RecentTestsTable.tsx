@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { FileText, CheckCircle2, ChevronRight } from 'lucide-react';
 import { TestResult } from '../types';
 
@@ -23,7 +24,7 @@ export const RecentTestsTable: React.FC<RecentTestsTableProps> = ({
         </div>
         <button
           onClick={onViewAll}
-          className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline"
+          className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
         >
           View All
         </button>
@@ -36,9 +37,10 @@ export const RecentTestsTable: React.FC<RecentTestsTableProps> = ({
             No tests taken yet. Start with your practice test!
           </div>
         ) : (
-          results.map((r) => (
-            <div
+          results.map((r, idx) => (
+            <motion.div
               key={r.id}
+              whileTap={{ scale: 0.98 }}
               onClick={() => onSelectResult?.(r)}
               className="p-3.5 hover:bg-blue-50/40 active:bg-blue-50/70 transition-colors flex items-center justify-between gap-3 cursor-pointer"
             >
@@ -63,38 +65,38 @@ export const RecentTestsTable: React.FC<RecentTestsTableProps> = ({
                 </div>
               </div>
 
-              <div className="text-right shrink-0 flex items-center gap-2">
-                <div>
-                  <div className="text-sm font-extrabold text-slate-900 leading-none">
-                    {r.percentage}%
-                  </div>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 mt-1 inline-block">
-                    Grade {r.grade}
-                  </span>
+              <div className="text-right shrink-0">
+                <div className="font-extrabold text-xs text-slate-800">
+                  {r.obtained_marks}/{r.total_marks}
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-300" />
+                <div className={`text-[10px] font-bold mt-0.5 ${
+                  r.percentage >= 60 ? 'text-emerald-600' : 'text-amber-600'
+                }`}>
+                  {Math.round(r.percentage)}% • {r.grade}
+                </div>
               </div>
-            </div>
+            </motion.div>
           ))
         )}
       </div>
 
-      {/* Desktop/Tablet Table (visible on screens >= 640px) */}
-      <div className="overflow-x-auto hidden sm:block">
+      {/* Desktop Clean Table (visible on screens >= 640px) */}
+      <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
               <th className="py-3 px-5">Test Name</th>
               <th className="py-3 px-4">Subject</th>
               <th className="py-3 px-4">Date</th>
               <th className="py-3 px-4 text-center">Score</th>
-              <th className="py-3 px-5 text-right">Status</th>
+              <th className="py-3 px-4 text-center">Grade</th>
+              <th className="py-3 px-5 text-right">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+          <tbody className="divide-y divide-slate-100 text-xs">
             {results.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-slate-400">
+                <td colSpan={6} className="py-8 text-center text-slate-400">
                   No tests taken yet. Start with your practice test!
                 </td>
               </tr>
@@ -103,30 +105,45 @@ export const RecentTestsTable: React.FC<RecentTestsTableProps> = ({
                 <tr
                   key={r.id}
                   onClick={() => onSelectResult?.(r)}
-                  className="hover:bg-blue-50/40 cursor-pointer transition-colors"
+                  className="hover:bg-blue-50/30 transition-colors cursor-pointer group"
                 >
-                  <td className="py-3.5 px-5 font-semibold text-slate-800 flex items-center gap-2.5">
-                    <div className="w-6 h-6 rounded bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                      <FileText className="w-3.5 h-3.5" />
+                  <td className="py-3.5 px-5">
+                    <div className="font-bold text-slate-800 group-hover:text-blue-600 transition-colors">
+                      {r.test_title}
                     </div>
-                    <span className="truncate max-w-[220px]">{r.test_title}</span>
                   </td>
-                  <td className="py-3.5 px-4 text-slate-600 font-medium">{r.subject}</td>
-                  <td className="py-3.5 px-4 text-slate-400">
+                  <td className="py-3.5 px-4 text-slate-600 font-medium">
+                    {r.subject}
+                  </td>
+                  <td className="py-3.5 px-4 text-slate-500 font-medium">
                     {new Date(r.submitted_at).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
-                      year: 'numeric',
                     })}
                   </td>
                   <td className="py-3.5 px-4 text-center">
-                    <span className="font-extrabold text-slate-900">{r.percentage}%</span>
-                    <span className="ml-1 text-[11px] text-slate-400 font-semibold">({r.grade})</span>
+                    <span className="font-extrabold text-slate-800">
+                      {r.obtained_marks}/{r.total_marks}
+                    </span>
+                    <span className="text-[11px] text-slate-400 ml-1">
+                      ({Math.round(r.percentage)}%)
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 text-center">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                      r.percentage >= 80 
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : r.percentage >= 60
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                    }`}>
+                      {r.grade}
+                    </span>
                   </td>
                   <td className="py-3.5 px-5 text-right">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                      Completed
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 group-hover:translate-x-0.5 transition-transform">
+                      <span>View</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
                     </span>
                   </td>
                 </tr>
