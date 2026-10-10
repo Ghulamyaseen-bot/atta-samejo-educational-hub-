@@ -16,48 +16,40 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      # 1. Download the existing repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Configure Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
 
-      # 3. Check project structure
-      - name: Check project files
+      - name: Check project
         run: |
-          echo "Checking project structure..."
+          echo "Checking project..."
           ls -la
-
-          if [ ! -f package.json ]; then
-            echo "ERROR: package.json not found in repository root."
+          test -f package.json || {
+            echo "ERROR: package.json not found"
             exit 1
-          fi
+          }
 
-          echo "Project package.json found."
-
-      # 4. Install dependencies
       - name: Install dependencies
         run: |
           npm install --legacy-peer-deps
 
-      # 5. Build the existing web application
+      - name: Install missing react-is dependency
+        run: |
+          npm install react-is --save --legacy-peer-deps
+
       - name: Build web application
         run: |
           npm run build
 
           if [ ! -d dist ]; then
-            echo "ERROR: Build output folder 'dist' was not created."
-            echo "Check the build script and Vite configuration."
+            echo "ERROR: dist folder not generated"
             exit 1
           fi
 
-          echo "Web application built successfully."
-
-      # 6. Install Capacitor for Android
       - name: Setup Capacitor
         run: |
           npm install --no-save --legacy-peer-deps \
@@ -65,13 +57,11 @@ jobs:
             @capacitor/cli@7 \
             @capacitor/android@7
 
-      # 7. Create Capacitor configuration if missing
       - name: Configure Capacitor
         run: |
           if [ ! -f capacitor.config.json ] && \
              [ ! -f capacitor.config.ts ] && \
              [ ! -f capacitor.config.js ]; then
-
             cat > capacitor.config.json <<'EOF'
           {
             "appId": "com.attasamejo.educationhub",
@@ -79,50 +69,35 @@ jobs:
             "webDir": "dist"
           }
           EOF
-
           fi
 
-      # 8. Add Android platform if needed
       - name: Add Android platform
         run: |
           if [ ! -d android ]; then
             npx cap add android
           fi
 
-      # 9. Sync the web application with Android
       - name: Sync Android
         run: |
           npx cap sync android
 
-      # 10. Setup Java
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
-          cache: gradle
 
-      # 11. Build the Android APK
       - name: Build APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      # 12. Verify APK
       - name: Verify APK
         run: |
-          APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+          test -f android/app/build/outputs/apk/debug/app-debug.apk
+          echo "APK generated successfully!"
 
-          if [ ! -f "$APK_PATH" ]; then
-            echo "ERROR: APK file was not generated."
-            exit 1
-          fi
-
-          echo "APK generated successfully."
-          ls -lh "$APK_PATH"
-
-      # 13. Upload APK to GitHub Actions
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
